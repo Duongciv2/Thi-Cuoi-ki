@@ -1,45 +1,50 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Alert, TouchableOpacity } from 'react-native';
-import { getCandidate, deleteCandidate } from '../api/candidateApi';
+import { View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { getCost, deleteCost } from '../api/costApi';
 import { useNavigation, useRoute } from '@react-navigation/native';
 
-const CandidateDetailScreen = () => {
-    const [candidate, setCandidate] = useState(null);
-    const [loading, setLoading] = useState(true);
+const CostDetailScreen = () => {
+    const [cost, setCost] = useState(null);
+    const [totalCost, setTotalCost] = useState(0);
     const route = useRoute();
     const navigation = useNavigation();
     const { id, onDelete } = route.params;
 
     useEffect(() => {
-        const fetchCandidate = async () => {
+        const fetchCost = async () => {
             try {
-                const fetchedCandidate = await getCandidate(id);
-                setCandidate(fetchedCandidate);
+                const fetchedCost = await getCost(id);
+                setCost(fetchedCost);
+                calculateTotalCost(fetchedCost); // Tính tổng tiền khi dữ liệu được tải
             } catch (error) {
-                Alert.alert('Lỗi', 'Không thể lấy thông tin ứng viên.');
-            } finally {
-                setLoading(false);
+                Alert.alert('Lỗi', 'Không thể lấy thông tin viện phí.');
             }
         };
 
-        fetchCandidate();
+        fetchCost();
     }, [id]);
+
+    const calculateTotalCost = (cost) => {
+        const { chiPhiKhamBenh, chiPhiThuoc, chiPhiXetNghiem } = cost;
+        const total = chiPhiKhamBenh + chiPhiThuoc + chiPhiXetNghiem;
+        setTotalCost(total);
+    };
 
     const handleDelete = async () => {
         Alert.alert(
             'Xác nhận',
-            'Bạn có muốn xóa ứng viên này không?',
+            'Bạn có muốn xóa thông tin viện phí này không?',
             [
                 { text: 'Không', style: 'cancel' },
                 {
                     text: 'Có', onPress: async () => {
                         try {
-                            await deleteCandidate(id);
+                            await deleteCost(id);
                             onDelete(id);  // Gọi callback để cập nhật danh sách
                             navigation.goBack();
-                            Alert.alert('Thành công', 'Ứng viên đã được xóa');
+                            Alert.alert('Thành công', 'Thông tin viện phí đã được xóa');
                         } catch (error) {
-                            Alert.alert('Lỗi', 'Không thể xóa ứng viên. Vui lòng thử lại.');
+                            Alert.alert('Lỗi', 'Không thể xóa thông tin viện phí. Vui lòng thử lại.');
                         }
                     }
                 },
@@ -47,18 +52,10 @@ const CandidateDetailScreen = () => {
         );
     };
 
-    if (loading) {
-        return (
-            <View style={styles.loadingContainer}>
-                <Text>Loading...</Text>
-            </View>
-        );
-    }
-
-    if (!candidate) {
+    if (!cost) {
         return (
             <View style={styles.errorContainer}>
-                <Text>Không thể tìm thấy thông tin ứng viên.</Text>
+                <Text>Không thể tìm thấy thông tin viện phí.</Text>
             </View>
         );
     }
@@ -66,33 +63,33 @@ const CandidateDetailScreen = () => {
     return (
         <View style={styles.container}>
             <View style={styles.detailItem}>
-                <Text style={styles.label}>Tên ứng viên:</Text>
-                <Text style={styles.value}>{candidate.tenUngVien}</Text>
+                <Text style={styles.label}>Mã số bệnh nhân:</Text>
+                <Text style={styles.value}>{cost.maSoBenhNhan}</Text>
             </View>
             <View style={styles.separator} />
             <View style={styles.detailItem}>
-                <Text style={styles.label}>Mã số ứng viên:</Text>
-                <Text style={styles.value}>{candidate.maUngVien}</Text>
+                <Text style={styles.label}>Chi phí khám bệnh:</Text>
+                <Text style={styles.value}>{cost.chiPhiKhamBenh}</Text>
             </View>
             <View style={styles.separator} />
             <View style={styles.detailItem}>
-                <Text style={styles.label}>Mô tả kinh nghiệm:</Text>
-                <Text style={styles.value}>{candidate.moTaKinhNghiem}</Text>
+                <Text style={styles.label}>Chi phí thuốc:</Text>
+                <Text style={styles.value}>{cost.chiPhiThuoc}</Text>
             </View>
             <View style={styles.separator} />
             <View style={styles.detailItem}>
-                <Text style={styles.label}>Email:</Text>
-                <Text style={styles.value}>{candidate.email}</Text>
+                <Text style={styles.label}>Chi phí xét nghiệm:</Text>
+                <Text style={styles.value}>{cost.chiPhiXetNghiem}</Text>
             </View>
             <View style={styles.separator} />
             <View style={styles.detailItem}>
-                <Text style={styles.label}>Địa chỉ:</Text>
-                <Text style={styles.value}>{candidate.address || 'N/A'}</Text>
+                <Text style={styles.label}>Tổng tiền:</Text>
+                <Text style={styles.value}>{totalCost}</Text>
             </View>
             <View style={styles.separator} />
             <View style={styles.buttonContainer}>
                 <TouchableOpacity style={styles.buttonWrapper} onPress={handleDelete}>
-                    <Text style={styles.buttonText}>Xóa ứng viên</Text>
+                    <Text style={styles.buttonText}>Xóa thông tin</Text>
                 </TouchableOpacity>
             </View>
         </View>
@@ -104,11 +101,6 @@ const styles = StyleSheet.create({
         flex: 1,
         padding: 16,
         backgroundColor: '#fff',
-    },
-    loadingContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
     },
     errorContainer: {
         flex: 1,
@@ -149,4 +141,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default CandidateDetailScreen;
+export default CostDetailScreen;
